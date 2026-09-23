@@ -1,0 +1,26 @@
+<header class="navbar">
+  <div class="nav-brand">
+    <span class="logo">ShiftManager</span>
+    <span class="role-badge" *ngIf="currentUser">{{ currentUser.role }}</span>
+  </div>
+
+  <nav class="nav-links" *ngIf="currentUser">
+    <ng-container *ngIf="currentUser.role === 'worker'">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+      <a routerLink="/shifts" routerLinkActive="active">My Shifts</a>
+      <a routerLink="/shifts/new" routerLinkActive="active">Add Shift</a>
+      <a routerLink="/profile" routerLinkActive="active">Profile</a>
+    </ng-container>
+
+    <ng-container *ngIf="currentUser.role === 'admin'">
+      <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+      <a routerLink="/admin/shifts" routerLinkActive="active">All Shifts</a>
+      <a routerLink="/admin/workers" routerLinkActive="active">Workers</a>
+    </ng-container>
+  </nav>
+
+  <div class="nav-user" *ngIf="currentUser">
+    <span class="greeting">Hello, {{ currentUser.firstName }}</span>
+    <button class="btn-logout" (click)="onLogout()">Logout</button>
+  </div>
+</header>
