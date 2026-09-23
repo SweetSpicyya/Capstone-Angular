@@ -1,0 +1,81 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <h2>Sign In</h2>
+
+    <div *ngIf="errorMessage" class="error-banner">
+      {{ errorMessage }}
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()" novalidate>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" formControlName="username" placeholder="Username" />
+        <span class="error-message" *ngIf="loginForm.get('username')?.touched && loginForm.get('username')?.invalid">
+          Min 6 chars with letters, numbers & symbols.
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" formControlName="password" placeholder="Password" />
+        <span class="error-message" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
+          Min 6 characters required.
+        </span>
+      </div>
+
+      <div class="reset-link-container">
+        <button type="button" class="btn-text" (click)="openResetModal()">
+          Forgot password?
+        </button>
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="isLoading">
+        {{ isLoading ? 'Logging in...' : 'Login' }}
+      </button>
+    </form>
+
+    <p class="auth-switch">
+      Don't have an account? <a routerLink="/register">Register here</a>
+    </p>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="isResetOpen">
+    <div class="modal-card">
+      <h3>Reset Password / Account</h3>
+      <p class="modal-desc">
+        Resetting password deletes all your user data. Enter username and email to confirm deletion.
+      </p>
+
+      <div *ngIf="resetMessage" class="error-banner">
+        {{ resetMessage }}
+      </div>
+
+      <form [formGroup]="resetForm" (ngSubmit)="onResetSubmit()" novalidate>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" formControlName="username" placeholder="Your username" />
+          <span class="error-message" *ngIf="resetForm.get('username')?.touched && resetForm.get('username')?.invalid">
+            Username is required.
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" formControlName="email" placeholder="Registered email" />
+          <span class="error-message" *ngIf="resetForm.get('email')?.touched && resetForm.get('email')?.invalid">
+            Valid email is required.
+          </span>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeResetModal()" [disabled]="isResetLoading">
+            Cancel
+          </button>
+          <button type="submit" class="btn-danger" [disabled]="isResetLoading">
+            {{ isResetLoading ? 'Deleting...' : 'Delete Account' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
