@@ -6,95 +6,105 @@
     <a routerLink="/shifts/new" class="btn-create">+ New Shift</a>
   </div>
 
-  <div *ngIf="errorMessage" class="error-banner">
-    {{ errorMessage }}
-  </div>
+  @if (errorMessage) {
+    <div class="error-banner">
+      {{ errorMessage }}
+    </div>
+  }
 
-  <div *ngIf="isLoading" class="loading-state">
-    Loading shift data...
-  </div>
+  @if (isLoading) {
+    <div class="loading-state">
+      Loading shift data...
+    </div>
+  } @else {
+    <div class="dashboard-grid">
+      <!-- Upcoming Shift Card -->
+      <section class="card upcoming-card">
+        <h2>Upcoming Shift</h2>
 
-  <div *ngIf="!isLoading" class="dashboard-grid">
-    <section class="card upcoming-card">
-      <h2>Upcoming Shift</h2>
+        @if (upcomingShift) {
+          <div class="shift-details">
+            <div class="badge-status">Next Up</div>
+            <div class="detail-row">
+              <span class="label">Date:</span>
+              <span class="value highlight">{{ upcomingShift.date }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Time:</span>
+              <span class="value">{{ upcomingShift.startTime }} - {{ upcomingShift.endTime }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Workplace:</span>
+              <span class="value">{{ upcomingShift.workplace }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Hourly Wage:</span>
+              <span class="value">${{ upcomingShift.hourlyWage }}/hr</span>
+            </div>
+            @if (upcomingShift.comments) {
+              <div class="detail-row">
+                <span class="label">Notes:</span>
+                <span class="value">{{ upcomingShift.comments }}</span>
+              </div>
+            }
+            <div class="action-footer">
+              <a [routerLink]="['/shifts/edit', upcomingShift.slug]" class="btn-outline">Edit Shift</a>
+            </div>
+          </div>
+        } @else {
+          <div class="empty-state">
+            <p>No upcoming shifts scheduled.</p>
+            <a routerLink="/shifts/new" class="btn-subtle">Schedule a shift</a>
+          </div>
+        }
+      </section>
 
-      <div *ngIf="upcomingShift; else noUpcoming" class="shift-details">
-        <div class="badge-status">Next Up</div>
-        <div class="detail-row">
-          <span class="label">Date:</span>
-          <span class="value highlight">{{ upcomingShift.date }}</span>
+      <!-- Weekly Stats Card -->
+      <section class="card stats-card">
+        <h2>This Week's Summary</h2>
+        <div class="stats-metric-container">
+          <div class="metric-box">
+            <span class="metric-num">{{ totalHoursThisWeek }}h</span>
+            <span class="metric-label">Completed Hours</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-num">${{ totalProfitThisWeek }}</span>
+            <span class="metric-label">Earned This Week</span>
+          </div>
         </div>
-        <div class="detail-row">
-          <span class="label">Time:</span>
-          <span class="value">{{ upcomingShift.startTime }} - {{ upcomingShift.endTime }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="label">Workplace:</span>
-          <span class="value">{{ upcomingShift.workplace }}</span>
-        </div>
-        <div class="detail-row">
-          <span class="label">Hourly Wage:</span>
-          <span class="value">${{ upcomingShift.hourlyWage }}/hr</span>
-        </div>
-        <div class="detail-row" *ngIf="upcomingShift.comments">
-          <span class="label">Notes:</span>
-          <span class="value">{{ upcomingShift.comments }}</span>
-        </div>
-        <div class="action-footer">
-          <a [routerLink]="['/shifts/edit', upcomingShift.slug]" class="btn-outline">Edit Shift</a>
-        </div>
-      </div>
 
-      <ng-template #noUpcoming>
-        <div class="empty-state">
-          <p>No upcoming shifts scheduled.</p>
-          <a routerLink="/shifts/new" class="btn-subtle">Schedule a shift</a>
-        </div>
-      </ng-template>
-    </section>
-
-    <section class="card stats-card">
-      <h2>This Week's Summary</h2>
-      <div class="stats-metric-container">
-        <div class="metric-box">
-          <span class="metric-num">{{ totalHoursThisWeek }}h</span>
-          <span class="metric-label">Completed Hours</span>
-        </div>
-        <div class="metric-box">
-          <span class="metric-num">${{ totalProfitThisWeek }}</span>
-          <span class="metric-label">Earned This Week</span>
-        </div>
-      </div>
-
-      <h3 class="sub-heading">Completed Shifts</h3>
-      <div *ngIf="pastShiftsThisWeek.length > 0; else noPast" class="table-responsive">
-        <table class="shift-table">
-          <thead>
-          <tr>
-            <th>Date</th>
-            <th>Workplace</th>
-            <th>Hours</th>
-            <th>Profit</th>
-            <th></th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr *ngFor="let s of pastShiftsThisWeek">
-            <td>{{ s.date }}</td>
-            <td>{{ s.workplace }}</td>
-            <td>{{ s.startTime }} - {{ s.endTime }}</td>
-            <td>${{ s.totalProfit }}</td>
-            <td>
-              <a [routerLink]="['/shifts/edit', s.slug]" class="table-link">Edit</a>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <ng-template #noPast>
-        <p class="empty-text">No completed shifts recorded for this week yet.</p>
-      </ng-template>
-    </section>
-  </div>
+        <h3 class="sub-heading">Completed Shifts</h3>
+        @if (pastShiftsThisWeek.length > 0) {
+          <div class="table-responsive">
+            <table class="shift-table">
+              <thead>
+              <tr>
+                <th>Date</th>
+                <th>Workplace</th>
+                <th>Hours</th>
+                <th>Profit</th>
+                <th></th>
+              </tr>
+              </thead>
+              <tbody>
+                @for (s of pastShiftsThisWeek; track s.id) {
+                  <tr>
+                    <td>{{ s.date }}</td>
+                    <td>{{ s.workplace }}</td>
+                    <td>{{ s.startTime }} - {{ s.endTime }}</td>
+                    <td>${{ s.totalProfit }}</td>
+                    <td>
+                      <a [routerLink]="['/shifts/edit', s.slug]" class="table-link">Edit</a>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="empty-text">No completed shifts recorded for this week yet.</p>
+        }
+      </section>
+    </div>
+  }
 </main>
