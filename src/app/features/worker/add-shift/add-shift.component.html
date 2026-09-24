@@ -1,0 +1,101 @@
+<app-navbar></app-navbar>
+
+<main class="page-container">
+  <div class="form-wrapper">
+    <div class="page-header">
+      <a routerLink="/shifts" class="btn-back">&larr; Back to My Shifts</a>
+      <h1>Add New Shift</h1>
+      <p class="subtitle">Record shift details, hourly price, and place of work</p>
+    </div>
+
+    @if (errorMessage) {
+      <div class="error-banner">
+        {{ errorMessage }}
+      </div>
+    }
+
+    <form [formGroup]="shiftForm" (ngSubmit)="onSubmit()" class="shift-form" novalidate>
+      <div class="form-group">
+        <label>Shift Slug (Unique Name)</label>
+        <input type="text" formControlName="slug" placeholder="e.g. morning-store-20260924" />
+        <span class="field-hint">Alphanumeric characters, dashes, and underscores only.</span>
+        @if (isInvalid('slug')) {
+          <span class="error-message">A valid unique slug is required.</span>
+        }
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" formControlName="date" />
+          @if (isInvalid('date')) {
+            <span class="error-message">Date is required.</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Shift Place (Workplace)</label>
+          <input type="text" formControlName="workplace" placeholder="e.g. Downtown Office" />
+          @if (isInvalid('workplace')) {
+            <span class="error-message">Workplace is required.</span>
+          }
+        </div>
+      </div>
+
+      <div class="form-row three-col">
+        <div class="form-group">
+          <label>Beginning Time</label>
+          <input type="time" formControlName="startTime" />
+          @if (isInvalid('startTime')) {
+            <span class="error-message">Start time required.</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>End Time</label>
+          <input type="time" formControlName="endTime" />
+          @if (isInvalid('endTime')) {
+            <span class="error-message">End time required.</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Hourly Wage ($)</label>
+          <input type="number" step="0.01" min="0.01" formControlName="hourlyWage" placeholder="20.00" />
+          @if (isInvalid('hourlyWage')) {
+            <span class="error-message">Enter valid wage.</span>
+          }
+        </div>
+      </div>
+
+      @if (isTimeRangeInvalid()) {
+        <div class="range-error">
+          Start time and end time cannot be identical.
+        </div>
+      }
+
+      <div class="calculation-summary">
+        <div class="calc-item">
+          <span class="calc-label">Total Duration:</span>
+          <span class="calc-val">{{ calculatedHours }} hrs</span>
+        </div>
+        <div class="calc-item">
+          <span class="calc-label">Calculated Profit:</span>
+          <span class="calc-val profit">${{ calculatedProfit }}</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Comments / Notes</label>
+        <textarea rows="3" formControlName="comments" placeholder="Optional notes about the shift..."></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" routerLink="/shifts" class="btn-cancel">Cancel</button>
+        <button type="submit" class="btn-submit" [disabled]="isLoading">
+          {{ isLoading ? 'Saving Shift...' : 'Save Shift' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</main>
