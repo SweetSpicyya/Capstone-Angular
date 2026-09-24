@@ -1,0 +1,79 @@
+<app-navbar></app-navbar>
+
+<main class="page-container">
+  <div class="form-wrapper">
+    <div class="page-header">
+      <h1>My Profile</h1>
+      <p class="subtitle">View and update your personal worker credentials</p>
+    </div>
+
+    @if (successMessage) {
+      <div class="success-banner">
+        {{ successMessage }}
+      </div>
+    }
+
+    @if (errorMessage) {
+      <div class="error-banner">
+        {{ errorMessage }}
+      </div>
+    }
+
+    @if (isLoading) {
+      <div class="loading-state">
+        Loading profile information...
+      </div>
+    } @else {
+      <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="profile-form" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" formControlName="username" class="input-disabled" />
+            <span class="field-hint">Username cannot be changed.</span>
+          </div>
+
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" formControlName="email" class="input-disabled" />
+            <span class="field-hint">Contact administrator to modify registered email.</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" formControlName="firstName" placeholder="First name" />
+            @if (isInvalid('firstName')) {
+              <span class="error-message">First name must be at least 2 characters.</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" formControlName="lastName" placeholder="Last name" />
+            @if (isInvalid('lastName')) {
+              <span class="error-message">Last name must be at least 2 characters.</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Birth Date</label>
+          <input type="date" formControlName="birthDate" />
+          @if (hasError('birthDate', 'required')) {
+            <span class="error-message">Birth date is required.</span>
+          }
+          @if (hasError('birthDate', 'invalidAge')) {
+            <span class="error-message">Age must be between 6 and 130 years old.</span>
+          }
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-submit" [disabled]="isSaving">
+            {{ isSaving ? 'Saving Changes...' : 'Save Profile' }}
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+</main>

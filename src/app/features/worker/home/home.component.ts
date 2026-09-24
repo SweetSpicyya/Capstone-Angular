@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import { ShiftService } from '../../../core/services/shift.service';
@@ -9,7 +8,7 @@ import { Shift, User } from '../../../core/models';
 @Component({
   selector: 'app-worker-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, NavbarComponent],
+  imports: [RouterLink, NavbarComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })

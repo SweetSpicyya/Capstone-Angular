@@ -113,6 +113,20 @@ export const mockBackendInterceptor: HttpInterceptorFn = (req, next) => {
     return of(new HttpResponse({ status: 200, body: result })).pipe(delay(200));
   }
 
+  if (url.includes('/api/shifts/worker/') && method === 'GET') {
+    const workerId = url.split('/').pop()?.split('?')[0] || '';
+    let result = shifts.filter(s => s.workerId === workerId);
+    const place = params.get('place');
+    const fromDate = params.get('fromDate');
+    const toDate = params.get('toDate');
+
+    if (place) result = result.filter(s => s.workplace.toLowerCase().includes(place.toLowerCase()));
+    if (fromDate) result = result.filter(s => s.date >= fromDate);
+    if (toDate) result = result.filter(s => s.date <= toDate);
+
+    return of(new HttpResponse({ status: 200, body: result })).pipe(delay(200));
+  }
+
   if (url.endsWith('/api/shifts') && method === 'GET') {
     let result = [...shifts];
     const workerName = params.get('workerName');
@@ -128,18 +142,13 @@ export const mockBackendInterceptor: HttpInterceptorFn = (req, next) => {
     return of(new HttpResponse({ status: 200, body: result })).pipe(delay(200));
   }
 
-  if (url.includes('/api/shifts/worker/') && method === 'GET') {
-    const workerId = url.split('/').pop()?.split('?')[0] || '';
-    let result = shifts.filter(s => s.workerId === workerId);
-    const place = params.get('place');
-    const fromDate = params.get('fromDate');
-    const toDate = params.get('toDate');
-
-    if (place) result = result.filter(s => s.workplace.toLowerCase().includes(place.toLowerCase()));
-    if (fromDate) result = result.filter(s => s.date >= fromDate);
-    if (toDate) result = result.filter(s => s.date <= toDate);
-
-    return of(new HttpResponse({ status: 200, body: result })).pipe(delay(200));
+  if (url.includes('/api/shifts/') && method === 'GET' && !url.includes('/worker/') && !url.endsWith('/my')) {
+    const slug = url.split('/').pop()?.split('?')[0] || '';
+    const found = shifts.find(s => s.slug === slug);
+    if (!found) {
+      return throwError(() => new HttpErrorResponse({ status: 404, error: { message: 'Shift not found.' } }));
+    }
+    return of(new HttpResponse({ status: 200, body: found })).pipe(delay(200));
   }
 
   if (url.endsWith('/api/shifts') && method === 'POST') {
@@ -168,7 +177,7 @@ export const mockBackendInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   if (url.includes('/api/shifts/') && method === 'PUT') {
-    const slug = url.split('/').pop() || '';
+    const slug = url.split('/').pop()?.split('?')[0] || '';
     const payload = body as Partial<Shift>;
     const idx = shifts.findIndex(s => s.slug === slug);
     if (idx === -1) {
@@ -198,7 +207,7 @@ export const mockBackendInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   if (url.includes('/api/workers/') && method === 'GET') {
-    const id = url.split('/').pop() || '';
+    const id = url.split('/').pop()?.split('?')[0] || '';
     const found = users.find(u => u.id === id);
     if (!found) {
       return throwError(() => new HttpErrorResponse({ status: 404, error: { message: 'Worker not found.' } }));
@@ -207,7 +216,7 @@ export const mockBackendInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   if (url.includes('/api/workers/') && method === 'PUT') {
-    const id = url.split('/').pop() || '';
+    const id = url.split('/').pop()?.split('?')[0] || '';
     const payload = body as Partial<User>;
     const idx = users.findIndex(u => u.id === id);
     if (idx === -1) {
@@ -219,7 +228,7 @@ export const mockBackendInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   if (url.includes('/api/workers/') && method === 'DELETE') {
-    const id = url.split('/').pop() || '';
+    const id = url.split('/').pop()?.split('?')[0] || '';
     users = users.filter(u => u.id !== id);
     shifts = shifts.filter(s => s.workerId !== id);
     saveToStorage(USERS_KEY, users);
