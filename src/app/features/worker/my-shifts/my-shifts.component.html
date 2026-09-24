@@ -1,0 +1,87 @@
+<app-navbar></app-navbar>
+
+<main class="page-container">
+  <div class="page-header">
+    <div>
+      <h1>My Shifts</h1>
+      <p class="subtitle">Review and manage your logged shifts</p>
+    </div>
+    <a routerLink="/shifts/new" class="btn-primary">+ Add New Shift</a>
+  </div>
+
+  <section class="filter-card">
+    <form [formGroup]="filterForm" (ngSubmit)="onFilter()" class="filter-form">
+      <div class="filter-field">
+        <label>Workplace</label>
+        <input type="text" formControlName="place" placeholder="Filter by workplace..." />
+      </div>
+
+      <div class="filter-field">
+        <label>From Date</label>
+        <input type="date" formControlName="fromDate" />
+      </div>
+
+      <div class="filter-field">
+        <label>To Date</label>
+        <input type="date" formControlName="toDate" />
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn-filter">Apply Filter</button>
+        <button type="button" class="btn-reset" (click)="onReset()">Reset</button>
+      </div>
+    </form>
+  </section>
+
+  @if (errorMessage) {
+    <div class="error-banner">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-state">
+      Loading your shifts...
+    </div>
+  } @else {
+    <section class="table-card">
+      <div class="table-responsive">
+        <table class="shift-table">
+          <thead>
+          <tr>
+            <th>Date</th>
+            <th>Workplace</th>
+            <th>Time</th>
+            <th>Hourly Wage</th>
+            <th>Total Profit</th>
+            <th>Comments</th>
+            <th>Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+            @for (shift of shifts; track shift.slug) {
+              <tr>
+                <td class="cell-highlight">{{ shift.date }}</td>
+                <td>{{ shift.workplace }}</td>
+                <td>{{ shift.startTime }} - {{ shift.endTime }}</td>
+                <td>${{ shift.hourlyWage }}</td>
+                <td class="cell-profit">${{ shift.totalProfit }}</td>
+                <td class="cell-notes">{{ shift.comments || '-' }}</td>
+                <td>
+                  <a [routerLink]="['/shifts/edit', shift.slug]" class="btn-action">Edit</a>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="empty-state">
+                  <p>No shifts match the selected criteria.</p>
+                  <a routerLink="/shifts/new" class="btn-link">Create a shift now</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</main>
