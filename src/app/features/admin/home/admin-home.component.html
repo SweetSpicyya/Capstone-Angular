@@ -1,0 +1,90 @@
+<app-navbar></app-navbar>
+
+<main class="page-container">
+  <div class="page-header">
+    <div>
+      <h1>Admin Dashboard</h1>
+      <p class="subtitle">Platform-wide overview, shift logs, and worker management</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/admin/shifts" class="btn-secondary">Manage Shifts</a>
+      <a routerLink="/admin/workers" class="btn-primary">Manage Workers</a>
+    </div>
+  </div>
+
+  @if (errorMessage) {
+    <div class="error-banner">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-state">
+      Loading admin metrics...
+    </div>
+  } @else {
+    <!-- Stats Cards Grid -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-title">Total Logged Shifts</span>
+        <span class="metric-value">{{ totalShiftsCount }}</span>
+        <span class="metric-hint">Across all registered workers</span>
+      </div>
+
+      <div class="metric-card highlight-card">
+        <span class="metric-title">Total Payout Calculated</span>
+        <span class="metric-value profit">${{ totalCompanyPayout }}</span>
+        <span class="metric-hint">Accumulated labor expenditure</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-title">Quick Actions</span>
+        <div class="quick-links">
+          <a routerLink="/admin/shifts" class="link-item">&rarr; Filter all shift logs</a>
+          <a routerLink="/admin/workers" class="link-item">&rarr; Worker directory</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recent System Activity Section -->
+    <section class="content-card">
+      <div class="section-header">
+        <h2>Recent Shift Records</h2>
+        <a routerLink="/admin/shifts" class="btn-text">View All Shifts &rarr;</a>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+          <tr>
+            <th>Date</th>
+            <th>Worker Name</th>
+            <th>Workplace</th>
+            <th>Time</th>
+            <th>Wage</th>
+            <th>Profit</th>
+          </tr>
+          </thead>
+          <tbody>
+            @for (shift of recentShifts; track shift.slug) {
+              <tr>
+                <td class="cell-highlight">{{ shift.date }}</td>
+                <td class="cell-worker">{{ shift.workerName || 'Worker #' + shift.workerId }}</td>
+                <td>{{ shift.workplace }}</td>
+                <td>{{ shift.startTime }} - {{ shift.endTime }}</td>
+                <td>${{ shift.hourlyWage }}/hr</td>
+                <td class="cell-profit">${{ shift.totalProfit }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="empty-state">
+                  No shifts have been registered by workers yet.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</main>
