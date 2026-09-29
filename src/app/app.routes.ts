@@ -7,6 +7,10 @@ import { AddShiftComponent } from './features/worker/add-shift/add-shift.compone
 import { EditShiftComponent } from './features/worker/edit-shift/edit-shift.component';
 import { ProfileComponent } from './features/worker/profile/profile.component';
 import { AdminHomeComponent } from './features/admin/home/admin-home.component';
+import { AllShiftsComponent } from './features/admin/all-shifts/all-shifts.component';
+import { AllWorkersComponent } from './features/admin/all-workers/all-workers.component';
+import { EditWorkerComponent } from './features/admin/edit-worker/edit-worker.component';
+import { WorkerShiftsComponent } from './features/admin/worker-shifts/worker-shifts.component';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 
@@ -20,6 +24,10 @@ export const routes: Routes = [
 
   // Admin routes
   { path: 'admin', component: AdminHomeComponent, canActivate: [adminGuard] },
+  { path: 'admin/shifts', component: AllShiftsComponent, canActivate: [adminGuard] },
+  { path: 'admin/workers', component: AllWorkersComponent, canActivate: [adminGuard] },
+  { path: 'admin/workers/:id/edit', component: EditWorkerComponent, canActivate: [adminGuard] },
+  { path: 'admin/workers/:id/shifts', component: WorkerShiftsComponent, canActivate: [adminGuard] },
 
   // Auth routes
   { path: 'login', component: LoginComponent },

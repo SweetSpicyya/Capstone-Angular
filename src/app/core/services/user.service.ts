@@ -11,11 +11,19 @@ export class UserService {
 
   constructor(private http: HttpClient) {}
 
+  getWorkers(): Observable<User[]> {
+    return this.http.get<User[]>(this.apiUrl);
+  }
+
   getWorkerById(id: string): Observable<User> {
     return this.http.get<User>(`${this.apiUrl}/${id}`);
   }
 
   updateWorker(id: string, data: Partial<User>): Observable<User> {
     return this.http.put<User>(`${this.apiUrl}/${id}`, data);
+  }
+
+  deleteWorker(id: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/${id}`);
   }
 }
