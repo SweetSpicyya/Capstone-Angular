@@ -1,0 +1,112 @@
+<app-navbar></app-navbar>
+
+<main class="page-container">
+  <div class="page-header">
+    <div>
+      <h1>All Shift Records</h1>
+      <p class="subtitle">Search, filter, and inspect shifts across all registered workers</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/shifts/new" class="btn-primary">+ Add New Shift</a>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <section class="summary-cards">
+    <div class="summary-item">
+      <span class="summary-label">Filtered Shifts</span>
+      <span class="summary-value">{{ shifts.length }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Total Hours</span>
+      <span class="summary-value">{{ totalHours }} hrs</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Total Payout</span>
+      <span class="summary-value profit">${{ totalProfit }}</span>
+    </div>
+  </section>
+
+  <!-- Filter Section -->
+  <section class="filter-card">
+    <form [formGroup]="filterForm" (ngSubmit)="onFilter()" class="filter-form">
+      <div class="filter-field">
+        <label>Worker Name</label>
+        <input type="text" formControlName="workerName" placeholder="Search by name..." />
+      </div>
+
+      <div class="filter-field">
+        <label>Workplace</label>
+        <input type="text" formControlName="place" placeholder="Search workplace..." />
+      </div>
+
+      <div class="filter-field">
+        <label>From Date</label>
+        <input type="date" formControlName="fromDate" />
+      </div>
+
+      <div class="filter-field">
+        <label>To Date</label>
+        <input type="date" formControlName="toDate" />
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn-filter">Apply Filter</button>
+        <button type="button" class="btn-reset" (click)="onReset()">Reset</button>
+      </div>
+    </form>
+  </section>
+
+  @if (errorMessage) {
+    <div class="error-banner">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-state">
+      Loading shifts...
+    </div>
+  } @else {
+    <section class="table-card">
+      <div class="table-responsive">
+        <table class="shift-table">
+          <thead>
+          <tr>
+            <th>Date</th>
+            <th>Worker</th>
+            <th>Workplace</th>
+            <th>Time</th>
+            <th>Wage</th>
+            <th>Total Profit</th>
+            <th>Comments</th>
+            <th>Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+            @for (shift of shifts; track shift.slug) {
+              <tr>
+                <td class="cell-highlight">{{ shift.date }}</td>
+                <td class="cell-worker">{{ shift.workerName || 'Worker #' + shift.workerId }}</td>
+                <td>{{ shift.workplace }}</td>
+                <td>{{ shift.startTime }} - {{ shift.endTime }}</td>
+                <td>${{ shift.hourlyWage }}/hr</td>
+                <td class="cell-profit">${{ shift.totalProfit }}</td>
+                <td class="cell-comments">{{ shift.comments || '-' }}</td>
+                <td>
+                  <a [routerLink]="['/shifts/edit', shift.slug]" class="btn-edit">Edit</a>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="empty-state">
+                  No shifts found matching the filter criteria.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</main>
