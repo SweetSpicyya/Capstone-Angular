@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone, ChangeDetectorRef, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
@@ -14,16 +15,19 @@ import { User } from '../../../core/models';
 })
 export class ProfileComponent implements OnInit {
   profileForm: FormGroup;
-  currentUser: User | null = null;
-  isLoading = true;
-  isSaving = false;
-  successMessage = '';
-  errorMessage = '';
+  currentUser = signal<User | null>(null);
+  isLoading = signal<boolean>(true);
+  isSaving = signal<boolean>(false);
+  successMessage = signal<string>('');
+  errorMessage = signal<string>('');
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private userService: UserService
+    private userService: UserService,
+    private router: Router,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     this.profileForm = this.fb.group({
       username: [{ value: '', disabled: true }],
@@ -35,14 +39,14 @@ export class ProfileComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.currentUser = this.authService.getCurrentUser();
-    if (!this.currentUser) {
-      this.errorMessage = 'User session not found.';
-      this.isLoading = false;
+    const user = this.authService.getCurrentUser();
+    if (!user) {
+      this.router.navigate(['/login']);
       return;
     }
 
-    this.loadProfile();
+    this.currentUser.set(user);
+    this.loadProfile(user.id);
   }
 
   isInvalid(fieldName: string): boolean {
@@ -70,38 +74,47 @@ export class ProfileComponent implements OnInit {
     return null;
   }
 
-  loadProfile(): void {
-    if (!this.currentUser) return;
-    this.isLoading = true;
-    this.errorMessage = '';
+  loadProfile(userId: string): void {
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
-    this.userService.getWorkerById(this.currentUser.id).subscribe({
-      next: (user) => {
-        this.isLoading = false;
-        this.profileForm.patchValue({
-          username: user.username,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          birthDate: user.birthDate
+    this.userService.getWorkerById(userId).subscribe({
+      next: (userData) => {
+        this.ngZone.run(() => {
+          this.currentUser.set(userData);
+          this.profileForm.patchValue({
+            username: userData.username,
+            email: userData.email,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            birthDate: userData.birthDate
+          });
+          this.isLoading.set(false);
+          this.cdr.detectChanges();
         });
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Failed to load profile details.';
+        this.ngZone.run(() => {
+          this.isLoading.set(false);
+          this.errorMessage.set(err.error?.message || 'Failed to retrieve profile details.');
+          this.cdr.detectChanges();
+        });
       }
     });
   }
 
   onSubmit(): void {
-    if (this.profileForm.invalid || this.isSaving || !this.currentUser) {
+    if (this.profileForm.invalid || this.isSaving()) {
       this.profileForm.markAllAsTouched();
       return;
     }
 
-    this.isSaving = true;
-    this.successMessage = '';
-    this.errorMessage = '';
+    const current = this.currentUser();
+    if (!current) return;
+
+    this.isSaving.set(true);
+    this.successMessage.set('');
+    this.errorMessage.set('');
 
     const formValues = this.profileForm.getRawValue();
     const updatePayload: Partial<User> = {
@@ -110,17 +123,31 @@ export class ProfileComponent implements OnInit {
       birthDate: formValues.birthDate
     };
 
-    this.userService.updateWorker(this.currentUser.id, updatePayload).subscribe({
+    this.userService.updateWorker(current.id, updatePayload).subscribe({
       next: (updatedUser) => {
-        this.isSaving = false;
-        this.successMessage = 'Profile updated successfully!';
-        const mergedUser = { ...this.currentUser, ...updatedUser };
-        localStorage.setItem('currentUser', JSON.stringify(mergedUser));
-        this.currentUser = mergedUser;
+        this.ngZone.run(() => {
+          this.isSaving.set(false);
+          this.currentUser.set(updatedUser);
+
+          // 브라우저 로컬 세션 동기화
+          if (typeof window !== 'undefined') {
+            const raw = localStorage.getItem('currentUser');
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              localStorage.setItem('currentUser', JSON.stringify({ ...parsed, ...updatedUser }));
+            }
+          }
+
+          this.successMessage.set('Profile successfully updated!');
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => {
-        this.isSaving = false;
-        this.errorMessage = err.error?.message || 'Failed to update profile.';
+        this.ngZone.run(() => {
+          this.isSaving.set(false);
+          this.errorMessage.set(err.error?.message || 'Failed to update profile.');
+          this.cdr.detectChanges();
+        });
       }
     });
   }

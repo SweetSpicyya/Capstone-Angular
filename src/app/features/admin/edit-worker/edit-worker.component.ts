@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
@@ -15,11 +15,11 @@ import { User } from '../../../core/models';
 export class EditWorkerComponent implements OnInit {
   workerForm: FormGroup;
   workerId = '';
-  workerData: User | null = null;
-  isLoading = true;
-  isSaving = false;
-  successMessage = '';
-  errorMessage = '';
+  workerData = signal<User | null>(null);
+  isLoading = signal<boolean>(true);
+  isSaving = signal<boolean>(false);
+  successMessage = signal<string>('');
+  errorMessage = signal<string>('');
 
   constructor(
     private fb: FormBuilder,
@@ -72,13 +72,12 @@ export class EditWorkerComponent implements OnInit {
   }
 
   loadWorker(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
     this.userService.getWorkerById(this.workerId).subscribe({
       next: (user) => {
-        this.isLoading = false;
-        this.workerData = user;
+        this.workerData.set(user);
         this.workerForm.patchValue({
           username: user.username,
           email: user.email,
@@ -86,23 +85,24 @@ export class EditWorkerComponent implements OnInit {
           lastName: user.lastName,
           birthDate: user.birthDate
         });
+        this.isLoading.set(false);
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Failed to retrieve worker details.';
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.message || 'Failed to retrieve worker details.');
       }
     });
   }
 
   onSubmit(): void {
-    if (this.workerForm.invalid || this.isSaving) {
+    if (this.workerForm.invalid || this.isSaving()) {
       this.workerForm.markAllAsTouched();
       return;
     }
 
-    this.isSaving = true;
-    this.successMessage = '';
-    this.errorMessage = '';
+    this.isSaving.set(true);
+    this.successMessage.set('');
+    this.errorMessage.set('');
 
     const formValues = this.workerForm.getRawValue();
     const updatePayload: Partial<User> = {
@@ -113,12 +113,12 @@ export class EditWorkerComponent implements OnInit {
 
     this.userService.updateWorker(this.workerId, updatePayload).subscribe({
       next: (updatedUser) => {
-        this.isSaving = false;
-        this.successMessage = `Profile for ${updatedUser.firstName} ${updatedUser.lastName} updated successfully!`;
+        this.isSaving.set(false);
+        this.successMessage.set(`Profile for ${updatedUser.firstName} ${updatedUser.lastName} updated successfully!`);
       },
       error: (err) => {
-        this.isSaving = false;
-        this.errorMessage = err.error?.message || 'Failed to update worker profile.';
+        this.isSaving.set(false);
+        this.errorMessage.set(err.error?.message || 'Failed to update worker profile.');
       }
     });
   }

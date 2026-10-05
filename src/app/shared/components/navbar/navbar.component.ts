@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models';
@@ -11,7 +11,7 @@ import { User } from '../../../core/models';
   styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent implements OnInit {
-  currentUser: User | null = null;
+  currentUser = signal<User | null>(null);
 
   constructor(
     private authService: AuthService,
@@ -19,11 +19,12 @@ export class NavbarComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.currentUser = this.authService.getCurrentUser();
+    this.currentUser.set(this.authService.getCurrentUser());
   }
 
-  onLogout(): void {
+  logout(): void {
     this.authService.logout();
+    this.currentUser.set(null);
     this.router.navigate(['/login']);
   }
 }

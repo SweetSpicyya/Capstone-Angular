@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
@@ -14,9 +14,9 @@ import { Shift } from '../../../core/models';
 })
 export class MyShiftsComponent implements OnInit {
   filterForm: FormGroup;
-  shifts: Shift[] = [];
-  isLoading = false;
-  errorMessage = '';
+  shifts = signal<Shift[]>([]);
+  isLoading = signal<boolean>(true);
+  errorMessage = signal<string>('');
 
   constructor(
     private fb: FormBuilder,
@@ -34,19 +34,26 @@ export class MyShiftsComponent implements OnInit {
   }
 
   fetchShifts(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
     const { place, fromDate, toDate } = this.filterForm.value;
 
-    this.shiftService.getMyShifts(place, fromDate, toDate).subscribe({
+    this.shiftService.getMyShifts(
+      place?.trim() || undefined,
+      fromDate || undefined,
+      toDate || undefined
+    ).subscribe({
       next: (data) => {
-        this.isLoading = false;
-        this.shifts = data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const sorted = (data || []).sort(
+          (a, b) => new Date(`${b.date}T${b.startTime}`).getTime() - new Date(`${a.date}T${a.startTime}`).getTime()
+        );
+        this.shifts.set(sorted);
+        this.isLoading.set(false);
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Failed to retrieve shifts.';
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.message || 'Failed to retrieve your shifts.');
       }
     });
   }

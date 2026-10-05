@@ -15,19 +15,19 @@
     </div>
   </div>
 
-  @if (successMessage) {
+  @if (successMessage()) {
     <div class="success-banner">
-      {{ successMessage }}
+      {{ successMessage() }}
     </div>
   }
 
-  @if (errorMessage) {
+  @if (errorMessage()) {
     <div class="error-banner">
-      {{ errorMessage }}
+      {{ errorMessage() }}
     </div>
   }
 
-  @if (isLoading) {
+  @if (isLoading()) {
     <div class="loading-state">
       Loading workers directory...
     </div>
@@ -46,7 +46,7 @@
           </tr>
           </thead>
           <tbody>
-            @for (worker of filteredWorkers; track worker.id) {
+            @for (worker of filteredWorkers(); track worker.id) {
               <tr>
                 <td class="cell-name">
                   <strong>{{ worker.firstName }} {{ worker.lastName }}</strong>

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
@@ -14,11 +14,11 @@ import { Shift } from '../../../core/models';
 })
 export class AllShiftsComponent implements OnInit {
   filterForm: FormGroup;
-  shifts: Shift[] = [];
-  totalProfit = 0;
-  totalHours = 0;
-  isLoading = false;
-  errorMessage = '';
+  shifts = signal<Shift[]>([]);
+  totalProfit = signal<number>(0);
+  totalHours = signal<number>(0);
+  isLoading = signal<boolean>(false);
+  errorMessage = signal<string>('');
 
   constructor(
     private fb: FormBuilder,
@@ -37,8 +37,8 @@ export class AllShiftsComponent implements OnInit {
   }
 
   fetchShifts(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
     const { workerName, place, fromDate, toDate } = this.filterForm.value;
 
@@ -49,28 +49,32 @@ export class AllShiftsComponent implements OnInit {
       toDate || undefined
     ).subscribe({
       next: (data) => {
-        this.isLoading = false;
-        this.shifts = data.sort(
+        const sorted = (data || []).sort(
           (a, b) => new Date(`${b.date}T${b.startTime}`).getTime() - new Date(`${a.date}T${a.startTime}`).getTime()
         );
-        this.calculateMetrics(this.shifts);
+        this.shifts.set(sorted);
+        this.calculateMetrics(sorted);
+        this.isLoading.set(false);
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Failed to fetch shift records.';
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.message || 'Failed to fetch shift records.');
       }
     });
   }
 
   private calculateMetrics(list: Shift[]): void {
-    this.totalProfit = Number(list.reduce((acc, s) => acc + (s.totalProfit || 0), 0).toFixed(2));
-    this.totalHours = Number(list.reduce((acc, s) => {
+    const profit = list.reduce((acc, s) => acc + (s.totalProfit || 0), 0);
+    this.totalProfit.set(Number(profit.toFixed(2)));
+
+    const hours = list.reduce((acc, s) => {
       const [sh, sm] = s.startTime.split(':').map(Number);
       const [eh, em] = s.endTime.split(':').map(Number);
       let diff = (eh * 60 + em) - (sh * 60 + sm);
       if (diff < 0) diff += 24 * 60;
       return acc + (diff / 60);
-    }, 0).toFixed(1));
+    }, 0);
+    this.totalHours.set(Number(hours.toFixed(1)));
   }
 
   onFilter(): void {

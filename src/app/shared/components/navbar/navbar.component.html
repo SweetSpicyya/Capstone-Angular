@@ -1,30 +1,33 @@
-<header class="navbar">
-  <div class="nav-brand">
-    <span class="logo">ShiftManager</span>
-    @if (currentUser) {
-      <span class="role-badge">{{ currentUser.role }}</span>
-    }
-  </div>
-
-  @if (currentUser) {
-    <nav class="nav-links">
-      @if (currentUser.role === 'worker') {
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
-        <a routerLink="/shifts" routerLinkActive="active">My Shifts</a>
-        <a routerLink="/shifts/new" routerLinkActive="active">Add Shift</a>
-        <a routerLink="/profile" routerLinkActive="active">Profile</a>
+<header class="navbar-wrapper">
+  <div class="navbar-inner">
+    <div class="navbar-brand">
+      <a routerLink="/" class="brand-link">
+        ShiftManager
+      </a>
+      @if (currentUser()?.role === 'admin') {
+        <span class="role-badge admin">ADMIN</span>
+      } @else if (currentUser()?.role === 'worker') {
+        <span class="role-badge worker">WORKER</span>
       }
+    </div>
 
-      @if (currentUser.role === 'admin') {
-        <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
-        <a routerLink="/admin/shifts" routerLinkActive="active">All Shifts</a>
-        <a routerLink="/admin/workers" routerLinkActive="active">Workers</a>
+    <nav class="navbar-nav">
+      @if (currentUser()?.role === 'admin') {
+        <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Dashboard</a>
+        <a routerLink="/admin/shifts" routerLinkActive="active" class="nav-link">All Shifts</a>
+        <a routerLink="/admin/workers" routerLinkActive="active" class="nav-link">Workers</a>
+      } @else if (currentUser()?.role === 'worker') {
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Dashboard</a>
+        <a routerLink="/shifts" routerLinkActive="active" class="nav-link">My Shifts</a>
+        <a routerLink="/profile" routerLinkActive="active" class="nav-link">Profile</a>
       }
     </nav>
 
-    <div class="nav-user">
-      <span class="greeting">Hello, {{ currentUser.firstName }}</span>
-      <button class="btn-logout" (click)="onLogout()">Logout</button>
+    <div class="navbar-user">
+      @if (currentUser()) {
+        <span class="greeting">Hello, {{ currentUser()?.firstName }}</span>
+        <button type="button" (click)="logout()" class="btn-logout">Logout</button>
+      }
     </div>
-  }
+  </div>
 </header>

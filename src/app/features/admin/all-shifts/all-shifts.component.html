@@ -6,28 +6,23 @@
       <h1>All Shift Records</h1>
       <p class="subtitle">Search, filter, and inspect shifts across all registered workers</p>
     </div>
-    <div class="header-actions">
-      <a routerLink="/shifts/new" class="btn-primary">+ Add New Shift</a>
-    </div>
   </div>
 
-  <!-- Summary Cards -->
   <section class="summary-cards">
     <div class="summary-item">
       <span class="summary-label">Filtered Shifts</span>
-      <span class="summary-value">{{ shifts.length }}</span>
+      <span class="summary-value">{{ shifts().length }}</span>
     </div>
     <div class="summary-item">
       <span class="summary-label">Total Hours</span>
-      <span class="summary-value">{{ totalHours }} hrs</span>
+      <span class="summary-value">{{ totalHours() }} hrs</span>
     </div>
     <div class="summary-item">
       <span class="summary-label">Total Payout</span>
-      <span class="summary-value profit">${{ totalProfit }}</span>
+      <span class="summary-value profit">${{ totalProfit() }}</span>
     </div>
   </section>
 
-  <!-- Filter Section -->
   <section class="filter-card">
     <form [formGroup]="filterForm" (ngSubmit)="onFilter()" class="filter-form">
       <div class="filter-field">
@@ -57,13 +52,13 @@
     </form>
   </section>
 
-  @if (errorMessage) {
+  @if (errorMessage()) {
     <div class="error-banner">
-      {{ errorMessage }}
+      {{ errorMessage() }}
     </div>
   }
 
-  @if (isLoading) {
+  @if (isLoading()) {
     <div class="loading-state">
       Loading shifts...
     </div>
@@ -84,7 +79,7 @@
           </tr>
           </thead>
           <tbody>
-            @for (shift of shifts; track shift.slug) {
+            @for (shift of shifts(); track shift.slug) {
               <tr>
                 <td class="cell-highlight">{{ shift.date }}</td>
                 <td class="cell-worker">{{ shift.workerName || 'Worker #' + shift.workerId }}</td>

@@ -1,31 +1,36 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone, ChangeDetectorRef, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import { ShiftService } from '../../../core/services/shift.service';
-import { Shift } from '../../../core/models';
+import { AuthService } from '../../../core/services/auth.service';
+import { Shift, User } from '../../../core/models';
 
 @Component({
   selector: 'app-edit-shift',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NavbarComponent],
+  imports: [ReactiveFormsModule, NavbarComponent],
   templateUrl: './edit-shift.component.html',
   styleUrls: ['./edit-shift.component.css']
 })
 export class EditShiftComponent implements OnInit {
   shiftForm: FormGroup;
   targetSlug = '';
-  calculatedHours = 0;
-  calculatedProfit = 0;
-  isLoading = true;
-  isSubmitting = false;
-  errorMessage = '';
+  currentUser = signal<User | null>(null);
+  calculatedHours = signal<number>(0);
+  calculatedProfit = signal<number>(0);
+  isLoading = signal<boolean>(true);
+  isSubmitting = signal<boolean>(false);
+  errorMessage = signal<string>('');
 
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private shiftService: ShiftService
+    private shiftService: ShiftService,
+    private authService: AuthService,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     this.shiftForm = this.fb.group({
       slug: [{ value: '', disabled: true }],
@@ -39,9 +44,10 @@ export class EditShiftComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.currentUser.set(this.authService.getCurrentUser());
     this.targetSlug = this.route.snapshot.paramMap.get('slug') || '';
     if (!this.targetSlug) {
-      this.router.navigate(['/shifts']);
+      this.navigateBack();
       return;
     }
 
@@ -70,26 +76,32 @@ export class EditShiftComponent implements OnInit {
   }
 
   loadShiftDetails(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
     this.shiftService.getShiftBySlug(this.targetSlug).subscribe({
       next: (shift: Shift) => {
-        this.isLoading = false;
-        this.shiftForm.patchValue({
-          slug: shift.slug,
-          date: shift.date,
-          startTime: shift.startTime,
-          endTime: shift.endTime,
-          hourlyWage: shift.hourlyWage,
-          workplace: shift.workplace,
-          comments: shift.comments || ''
+        this.ngZone.run(() => {
+          this.shiftForm.patchValue({
+            slug: shift.slug,
+            date: shift.date,
+            startTime: shift.startTime,
+            endTime: shift.endTime,
+            hourlyWage: shift.hourlyWage,
+            workplace: shift.workplace,
+            comments: shift.comments || ''
+          });
+          this.recalculateSummary();
+          this.isLoading.set(false);
+          this.cdr.detectChanges();
         });
-        this.recalculateSummary();
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Failed to fetch shift details.';
+        this.ngZone.run(() => {
+          this.isLoading.set(false);
+          this.errorMessage.set(err.error?.message || 'Failed to fetch shift details.');
+          this.cdr.detectChanges();
+        });
       }
     });
   }
@@ -98,8 +110,9 @@ export class EditShiftComponent implements OnInit {
     const { startTime, endTime, hourlyWage } = this.shiftForm.getRawValue();
 
     if (!startTime || !endTime || !hourlyWage || hourlyWage <= 0) {
-      this.calculatedHours = 0;
-      this.calculatedProfit = 0;
+      this.calculatedHours.set(0);
+      this.calculatedProfit.set(0);
+      this.cdr.detectChanges();
       return;
     }
 
@@ -113,18 +126,27 @@ export class EditShiftComponent implements OnInit {
     }
 
     const diffHours = (endMin - startMin) / 60;
-    this.calculatedHours = Number(diffHours.toFixed(2));
-    this.calculatedProfit = Number((diffHours * Number(hourlyWage)).toFixed(2));
+    this.calculatedHours.set(Number(diffHours.toFixed(2)));
+    this.calculatedProfit.set(Number((diffHours * Number(hourlyWage)).toFixed(2)));
+    this.cdr.detectChanges();
+  }
+
+  navigateBack(): void {
+    if (this.currentUser()?.role === 'admin') {
+      this.router.navigate(['/admin/shifts']);
+    } else {
+      this.router.navigate(['/shifts']);
+    }
   }
 
   onSubmit(): void {
-    if (this.shiftForm.invalid || this.isSubmitting) {
+    if (this.shiftForm.invalid || this.isSubmitting()) {
       this.shiftForm.markAllAsTouched();
       return;
     }
 
-    this.isSubmitting = true;
-    this.errorMessage = '';
+    this.isSubmitting.set(true);
+    this.errorMessage.set('');
 
     const formValues = this.shiftForm.getRawValue();
     const payload: Partial<Shift> = {
@@ -138,12 +160,17 @@ export class EditShiftComponent implements OnInit {
 
     this.shiftService.updateShift(this.targetSlug, payload).subscribe({
       next: () => {
-        this.isSubmitting = false;
-        this.router.navigate(['/shifts']);
+        this.ngZone.run(() => {
+          this.isSubmitting.set(false);
+          this.navigateBack();
+        });
       },
       error: (err) => {
-        this.isSubmitting = false;
-        this.errorMessage = err.error?.message || err.message || 'Failed to update shift.';
+        this.ngZone.run(() => {
+          this.isSubmitting.set(false);
+          this.errorMessage.set(err.error?.message || 'Failed to update shift.');
+          this.cdr.detectChanges();
+        });
       }
     });
   }

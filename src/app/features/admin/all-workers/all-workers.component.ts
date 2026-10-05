@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import { UserService } from '../../../core/services/user.service';
@@ -12,12 +12,12 @@ import { User } from '../../../core/models';
   styleUrls: ['./all-workers.component.css']
 })
 export class AllWorkersComponent implements OnInit {
-  workers: User[] = [];
-  filteredWorkers: User[] = [];
-  searchTerm = '';
-  isLoading = true;
-  errorMessage = '';
-  successMessage = '';
+  workers = signal<User[]>([]);
+  filteredWorkers = signal<User[]>([]);
+  searchTerm = signal<string>('');
+  isLoading = signal<boolean>(true);
+  errorMessage = signal<string>('');
+  successMessage = signal<string>('');
 
   constructor(private userService: UserService) {}
 
@@ -26,38 +26,38 @@ export class AllWorkersComponent implements OnInit {
   }
 
   fetchWorkers(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
     this.userService.getWorkers().subscribe({
       next: (data) => {
-        this.isLoading = false;
-        this.workers = data;
-        this.filterWorkers();
+        const list = data || [];
+        this.workers.set(list);
+        this.filteredWorkers.set(list);
+        this.isLoading.set(false);
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Failed to retrieve workers list.';
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.message || err.message || 'Failed to retrieve workers list.');
       }
     });
   }
 
   onSearchChange(event: Event): void {
-    this.searchTerm = (event.target as HTMLInputElement).value.toLowerCase();
-    this.filterWorkers();
-  }
+    const term = (event.target as HTMLInputElement).value.toLowerCase();
+    this.searchTerm.set(term);
 
-  filterWorkers(): void {
-    if (!this.searchTerm.trim()) {
-      this.filteredWorkers = [...this.workers];
-      return;
+    if (!term.trim()) {
+      this.filteredWorkers.set(this.workers());
+    } else {
+      this.filteredWorkers.set(
+        this.workers().filter(w =>
+          `${w.firstName} ${w.lastName}`.toLowerCase().includes(term) ||
+          w.email.toLowerCase().includes(term) ||
+          w.username.toLowerCase().includes(term)
+        )
+      );
     }
-
-    this.filteredWorkers = this.workers.filter(w =>
-      `${w.firstName} ${w.lastName}`.toLowerCase().includes(this.searchTerm) ||
-      w.email.toLowerCase().includes(this.searchTerm) ||
-      w.username.toLowerCase().includes(this.searchTerm)
-    );
   }
 
   calculateAge(birthDateStr: string): number {
@@ -81,12 +81,13 @@ export class AllWorkersComponent implements OnInit {
 
     this.userService.deleteWorker(worker.id).subscribe({
       next: () => {
-        this.successMessage = `Worker ${worker.firstName} ${worker.lastName} has been successfully removed.`;
-        this.workers = this.workers.filter(w => w.id !== worker.id);
-        this.filterWorkers();
+        this.successMessage.set(`Worker ${worker.firstName} ${worker.lastName} has been successfully removed.`);
+        const updated = this.workers().filter(w => w.id !== worker.id);
+        this.workers.set(updated);
+        this.filteredWorkers.set(updated);
       },
       error: (err) => {
-        this.errorMessage = err.error?.message || 'Failed to delete worker.';
+        this.errorMessage.set(err.error?.message || 'Failed to delete worker.');
       }
     });
   }
