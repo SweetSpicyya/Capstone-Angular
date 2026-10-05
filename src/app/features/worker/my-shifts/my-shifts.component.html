@@ -33,13 +33,13 @@
     </form>
   </section>
 
-  @if (errorMessage) {
+  @if (errorMessage()) {
     <div class="error-banner">
-      {{ errorMessage }}
+      {{ errorMessage() }}
     </div>
   }
 
-  @if (isLoading) {
+  @if (isLoading()) {
     <div class="loading-state">
       Loading your shifts...
     </div>
@@ -59,12 +59,12 @@
           </tr>
           </thead>
           <tbody>
-            @for (shift of shifts; track shift.slug) {
+            @for (shift of shifts(); track shift.slug) {
               <tr>
                 <td class="cell-highlight">{{ shift.date }}</td>
                 <td>{{ shift.workplace }}</td>
                 <td>{{ shift.startTime }} - {{ shift.endTime }}</td>
-                <td>${{ shift.hourlyWage }}</td>
+                <td>${{ shift.hourlyWage }}/hr</td>
                 <td class="cell-profit">${{ shift.totalProfit }}</td>
                 <td class="cell-notes">{{ shift.comments || '-' }}</td>
                 <td>

@@ -8,59 +8,37 @@ import { User } from '../models';
 })
 export class AuthService {
   private readonly apiUrl = 'http://localhost:3000/api/auth';
-  private readonly sessionKey = 'currentUser';
+  private readonly userKey = 'currentUser';
 
   constructor(private http: HttpClient) {}
 
-  register(userData: Omit<User, 'id'>): Observable<User> {
-    return this.http.post<User>(`${this.apiUrl}/register`, userData).pipe(
-      tap((user) => this.setSession(user))
-    );
-  }
-
-  login(credentials: { username: string; password: string }): Observable<User> {
-    return this.http.post<User>(`${this.apiUrl}/login`, credentials).pipe(
-      tap((user) => this.setSession(user))
-    );
-  }
-
-  resetAccount(data: { username: string; email: string }): Observable<{ success: boolean }> {
-    return this.http.post<{ success: boolean }>(`${this.apiUrl}/reset`, data).pipe(
-      tap(() => {
-        const current = this.getCurrentUser();
-        if (current && current.username === data.username) {
-          this.logout();
+  login(username: string, password?: string): Observable<User> {
+    return this.http.post<User>(`${this.apiUrl}/login`, { username, password }).pipe(
+      tap((user) => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(this.userKey, JSON.stringify(user));
         }
       })
     );
   }
 
-  setSession(user: User): void {
-    const sessionData = {
-      ...user,
-      loginTimestamp: Date.now()
-    };
-    localStorage.setItem(this.sessionKey, JSON.stringify(sessionData));
-  }
-
-  getCurrentUser(): (User & { loginTimestamp: number }) | null {
-    const data = localStorage.getItem(this.sessionKey);
-    if (!data) return null;
-
-    try {
-      const user = JSON.parse(data);
-      const sessionDuration = 60 * 60 * 1000;
-      if (Date.now() - user.loginTimestamp > sessionDuration) {
-        this.logout();
-        return null;
-      }
-      return user;
-    } catch {
-      return null;
-    }
+  register(userData: Partial<User>): Observable<User> {
+    return this.http.post<User>(`${this.apiUrl}/register`, userData);
   }
 
   logout(): void {
-    localStorage.removeItem(this.sessionKey);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(this.userKey);
+    }
+  }
+
+  getCurrentUser(): User | null {
+    if (typeof window === 'undefined') return null;
+    const raw = localStorage.getItem(this.userKey);
+    return raw ? JSON.parse(raw) : null;
+  }
+
+  isAuthenticated(): boolean {
+    return !!this.getCurrentUser();
   }
 }

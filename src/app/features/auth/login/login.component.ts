@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, NgZone, ChangeDetectorRef, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -12,13 +12,15 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class LoginComponent {
   loginForm: FormGroup;
-  isLoading = false;
-  errorMessage = '';
+  isLoading = signal<boolean>(false);
+  errorMessage = signal<string>('');
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
@@ -26,35 +28,39 @@ export class LoginComponent {
     });
   }
 
-  // 템플릿에서 .touched에 직접 접근하지 않도록 헬퍼 메서드 제공
   isInvalid(fieldName: string): boolean {
     const control = this.loginForm.get(fieldName);
     return !!(control && control.touched && control.invalid);
   }
 
   onSubmit(): void {
-    if (this.loginForm.invalid || this.isLoading) {
+    if (this.loginForm.invalid || this.isLoading()) {
       this.loginForm.markAllAsTouched();
       return;
     }
 
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
     const { username, password } = this.loginForm.value;
 
-    this.authService.login({username, password}).subscribe({
+    this.authService.login(username, password).subscribe({
       next: (user) => {
-        this.isLoading = false;
-        if (user.role === 'admin') {
-          this.router.navigate(['/admin']);
-        } else {
-          this.router.navigate(['/']);
-        }
+        this.ngZone.run(() => {
+          this.isLoading.set(false);
+          if (user.role === 'admin') {
+            this.router.navigate(['/admin']);
+          } else {
+            this.router.navigate(['/']);
+          }
+        });
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Invalid username or password.';
+        this.ngZone.run(() => {
+          this.isLoading.set(false);
+          this.errorMessage.set(err.error?.message || 'Invalid username or password.');
+          this.cdr.detectChanges();
+        });
       }
     });
   }

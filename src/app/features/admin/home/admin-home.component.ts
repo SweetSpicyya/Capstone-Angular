@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
@@ -15,13 +15,13 @@ import { Shift, User } from '../../../core/models';
   styleUrls: ['./admin-home.component.css']
 })
 export class AdminHomeComponent implements OnInit {
-  currentAdmin: User | null = null;
-  totalWorkers = 0;
-  totalShiftsCount = 0;
-  totalCompanyPayout = 0;
-  recentShifts: Shift[] = [];
-  isLoading = true;
-  errorMessage = '';
+  currentAdmin = signal<User | null>(null);
+  totalWorkers = signal<number>(0);
+  totalShiftsCount = signal<number>(0);
+  totalCompanyPayout = signal<number>(0);
+  recentShifts = signal<Shift[]>([]);
+  isLoading = signal<boolean>(true);
+  errorMessage = signal<string>('');
 
   constructor(
     private shiftService: ShiftService,
@@ -30,45 +30,37 @@ export class AdminHomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.currentAdmin = this.authService.getCurrentUser();
+    this.currentAdmin.set(this.authService.getCurrentUser());
     this.loadAdminDashboard();
   }
 
   loadAdminDashboard(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
     forkJoin({
       shifts: this.shiftService.getAllShifts(),
-
-      workers: this.userService.getWorkerById('') // 혹은 전체 워커 목록 API
+      workers: this.userService.getWorkers()
     }).subscribe({
-      next: ({ shifts }) => {
-        this.isLoading = false;
-        this.totalShiftsCount = shifts.length;
+      next: ({ shifts, workers }) => {
+        const shiftList = shifts || [];
+        const workerList = workers || [];
 
-        const sumProfit = shifts.reduce((acc, s) => acc + (s.totalProfit || 0), 0);
-        this.totalCompanyPayout = Number(sumProfit.toFixed(2));
+        this.totalWorkers.set(workerList.length);
+        this.totalShiftsCount.set(shiftList.length);
 
-        this.recentShifts = [...shifts]
-          .sort((a, b) => new Date(`${b.date}T${b.startTime}`).getTime() - new Date(`${a.date}T${a.startTime}`).getTime())
-          .slice(0, 5);
+        const sumProfit = shiftList.reduce((acc, s) => acc + (s.totalProfit || 0), 0);
+        this.totalCompanyPayout.set(Number(sumProfit.toFixed(2)));
+
+        const sorted = [...shiftList].sort(
+          (a, b) => new Date(`${b.date}T${b.startTime}`).getTime() - new Date(`${a.date}T${a.startTime}`).getTime()
+        );
+        this.recentShifts.set(sorted.slice(0, 5));
+        this.isLoading.set(false);
       },
-      error: () => {
-        this.shiftService.getAllShifts().subscribe({
-          next: (shifts) => {
-            this.isLoading = false;
-            this.totalShiftsCount = shifts.length;
-            this.totalCompanyPayout = Number(shifts.reduce((acc, s) => acc + (s.totalProfit || 0), 0).toFixed(2));
-            this.recentShifts = [...shifts]
-              .sort((a, b) => new Date(`${b.date}T${b.startTime}`).getTime() - new Date(`${a.date}T${a.startTime}`).getTime())
-              .slice(0, 5);
-          },
-          error: (err) => {
-            this.isLoading = false;
-            this.errorMessage = err.error?.message || 'Failed to load admin statistics.';
-          }
-        });
+      error: (err) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.message || 'Failed to load admin statistics.');
       }
     });
   }

@@ -8,19 +8,19 @@
       <p class="subtitle">Modify worker credentials and personal information</p>
     </div>
 
-    @if (successMessage) {
+    @if (successMessage()) {
       <div class="success-banner">
-        {{ successMessage }}
+        {{ successMessage() }}
       </div>
     }
 
-    @if (errorMessage) {
+    @if (errorMessage()) {
       <div class="error-banner">
-        {{ errorMessage }}
+        {{ errorMessage() }}
       </div>
     }
 
-    @if (isLoading) {
+    @if (isLoading()) {
       <div class="loading-state">
         Loading worker profile...
       </div>
@@ -71,8 +71,8 @@
 
         <div class="form-actions">
           <button type="button" routerLink="/admin/workers" class="btn-cancel">Cancel</button>
-          <button type="submit" class="btn-submit" [disabled]="isSaving">
-            {{ isSaving ? 'Saving Changes...' : 'Save Worker Profile' }}
+          <button type="submit" class="btn-submit" [disabled]="isSaving()">
+            {{ isSaving() ? 'Saving Changes...' : 'Save Worker Profile' }}
           </button>
         </div>
       </form>

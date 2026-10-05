@@ -1,110 +1,90 @@
 <app-navbar></app-navbar>
 
 <main class="dashboard-container">
-  <div class="dashboard-header">
-    <h1>Worker Dashboard</h1>
-    <a routerLink="/shifts/new" class="btn-create">+ New Shift</a>
+  <div class="welcome-banner">
+    <h1>Welcome back, {{ currentUser()?.firstName }}</h1>
+    <p>Here is your weekly shift and earning summary.</p>
   </div>
 
-  @if (errorMessage) {
+  @if (errorMessage()) {
     <div class="error-banner">
-      {{ errorMessage }}
+      {{ errorMessage() }}
     </div>
   }
 
-  @if (isLoading) {
+  @if (isLoading()) {
     <div class="loading-state">
-      Loading shift data...
+      Loading your dashboard...
     </div>
   } @else {
-    <div class="dashboard-grid">
-      <!-- Upcoming Shift Card -->
-      <section class="card upcoming-card">
-        <h2>Upcoming Shift</h2>
-
-        @if (upcomingShift) {
-          <div class="shift-details">
-            <div class="badge-status">Next Up</div>
-            <div class="detail-row">
-              <span class="label">Date:</span>
-              <span class="value highlight">{{ upcomingShift.date }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Time:</span>
-              <span class="value">{{ upcomingShift.startTime }} - {{ upcomingShift.endTime }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Workplace:</span>
-              <span class="value">{{ upcomingShift.workplace }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">Hourly Wage:</span>
-              <span class="value">${{ upcomingShift.hourlyWage }}/hr</span>
-            </div>
-            @if (upcomingShift.comments) {
-              <div class="detail-row">
-                <span class="label">Notes:</span>
-                <span class="value">{{ upcomingShift.comments }}</span>
-              </div>
-            }
-            <div class="action-footer">
-              <a [routerLink]="['/shifts/edit', upcomingShift.slug]" class="btn-outline">Edit Shift</a>
-            </div>
+    <section class="cards-grid">
+      <!-- Upcoming Shift -->
+      <div class="card">
+        <h2 class="card-title">Next Upcoming Shift</h2>
+        @if (upcomingShift()) {
+          <div class="upcoming-content">
+            <span class="upcoming-date">{{ upcomingShift()?.date }}</span>
+            <span class="upcoming-time">{{ upcomingShift()?.startTime }} - {{ upcomingShift()?.endTime }}</span>
+            <span class="upcoming-place">{{ upcomingShift()?.workplace }}</span>
+            <div class="upcoming-wage">Wage: ${{ upcomingShift()?.hourlyWage }}/hr</div>
           </div>
         } @else {
-          <div class="empty-state">
+          <div class="empty-upcoming">
             <p>No upcoming shifts scheduled.</p>
-            <a routerLink="/shifts/new" class="btn-subtle">Schedule a shift</a>
+            <a routerLink="/shifts/new" class="btn-link">+ Schedule a Shift</a>
           </div>
         }
-      </section>
+      </div>
 
-      <!-- Weekly Stats Card -->
-      <section class="card stats-card">
-        <h2>This Week's Summary</h2>
-        <div class="stats-metric-container">
+      <!-- Weekly Summary -->
+      <div class="card">
+        <h2 class="card-title">This Week's Completed Hours</h2>
+        <div class="metric-row">
           <div class="metric-box">
-            <span class="metric-num">{{ totalHoursThisWeek }}h</span>
-            <span class="metric-label">Completed Hours</span>
+            <span class="metric-num">{{ totalHoursThisWeek() }} hrs</span>
+            <span class="metric-sub">Logged Duration</span>
           </div>
           <div class="metric-box">
-            <span class="metric-num">${{ totalProfitThisWeek }}</span>
-            <span class="metric-label">Earned This Week</span>
+            <span class="metric-num profit">${{ totalProfitThisWeek() }}</span>
+            <span class="metric-sub">Estimated Earnings</span>
           </div>
         </div>
+      </div>
+    </section>
 
-        <h3 class="sub-heading">Completed Shifts</h3>
-        @if (pastShiftsThisWeek.length > 0) {
-          <div class="table-responsive">
-            <table class="shift-table">
-              <thead>
+    <!-- Past Shifts This Week -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2>Completed Shifts This Week</h2>
+        <a routerLink="/shifts" class="btn-text">View All Shifts</a>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+          <tr>
+            <th>Date</th>
+            <th>Workplace</th>
+            <th>Time</th>
+            <th>Earnings</th>
+          </tr>
+          </thead>
+          <tbody>
+            @for (shift of pastShiftsThisWeek(); track shift.slug) {
               <tr>
-                <th>Date</th>
-                <th>Workplace</th>
-                <th>Hours</th>
-                <th>Profit</th>
-                <th></th>
+                <td>{{ shift.date }}</td>
+                <td>{{ shift.workplace }}</td>
+                <td>{{ shift.startTime }} - {{ shift.endTime }}</td>
+                <td class="cell-profit">${{ shift.totalProfit }}</td>
               </tr>
-              </thead>
-              <tbody>
-                @for (s of pastShiftsThisWeek; track s.id) {
-                  <tr>
-                    <td>{{ s.date }}</td>
-                    <td>{{ s.workplace }}</td>
-                    <td>{{ s.startTime }} - {{ s.endTime }}</td>
-                    <td>${{ s.totalProfit }}</td>
-                    <td>
-                      <a [routerLink]="['/shifts/edit', s.slug]" class="table-link">Edit</a>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else {
-          <p class="empty-text">No completed shifts recorded for this week yet.</p>
-        }
-      </section>
-    </div>
+            } @empty {
+              <tr>
+                <td colspan="4" class="empty-state">No completed shifts yet this week.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
   }
 </main>

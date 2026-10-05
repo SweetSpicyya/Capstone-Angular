@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone, ChangeDetectorRef, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
@@ -15,17 +15,19 @@ import { User } from '../../../core/models';
 })
 export class AddShiftComponent implements OnInit {
   shiftForm: FormGroup;
-  currentUser: User | null = null;
-  calculatedHours = 0;
-  calculatedProfit = 0;
-  isLoading = false;
-  errorMessage = '';
+  currentUser = signal<User | null>(null);
+  calculatedHours = signal<number>(0);
+  calculatedProfit = signal<number>(0);
+  isLoading = signal<boolean>(false);
+  errorMessage = signal<string>('');
 
   constructor(
     private fb: FormBuilder,
     private shiftService: ShiftService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     this.shiftForm = this.fb.group({
       slug: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9-_]+$/)]],
@@ -39,7 +41,13 @@ export class AddShiftComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.currentUser = this.authService.getCurrentUser();
+    const user = this.authService.getCurrentUser();
+    if (!user) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    this.currentUser.set(user);
+
     this.shiftForm.valueChanges.subscribe(() => {
       this.recalculateSummary();
     });
@@ -67,8 +75,9 @@ export class AddShiftComponent implements OnInit {
     const { startTime, endTime, hourlyWage } = this.shiftForm.value;
 
     if (!startTime || !endTime || !hourlyWage || hourlyWage <= 0) {
-      this.calculatedHours = 0;
-      this.calculatedProfit = 0;
+      this.calculatedHours.set(0);
+      this.calculatedProfit.set(0);
+      this.cdr.detectChanges();
       return;
     }
 
@@ -82,29 +91,32 @@ export class AddShiftComponent implements OnInit {
     }
 
     const diffHours = (endMin - startMin) / 60;
-    this.calculatedHours = Number(diffHours.toFixed(2));
-    this.calculatedProfit = Number((diffHours * Number(hourlyWage)).toFixed(2));
+    this.calculatedHours.set(Number(diffHours.toFixed(2)));
+    this.calculatedProfit.set(Number((diffHours * Number(hourlyWage)).toFixed(2)));
+    this.cdr.detectChanges();
   }
 
   onSubmit(): void {
-    if (this.shiftForm.invalid || this.isLoading) {
+    if (this.shiftForm.invalid || this.isLoading()) {
       this.shiftForm.markAllAsTouched();
+      this.cdr.detectChanges();
       return;
     }
 
-    if (!this.currentUser) {
+    const user = this.currentUser();
+    if (!user) {
       this.router.navigate(['/login']);
       return;
     }
 
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
     const formValues = this.shiftForm.value;
     const payload = {
       slug: formValues.slug.trim(),
-      workerId: this.currentUser.id,
-      workerName: `${this.currentUser.firstName} ${this.currentUser.lastName}`,
+      workerId: user.id,
+      workerName: `${user.firstName} ${user.lastName}`.trim(),
       date: formValues.date,
       startTime: formValues.startTime,
       endTime: formValues.endTime,
@@ -115,12 +127,17 @@ export class AddShiftComponent implements OnInit {
 
     this.shiftService.createShift(payload).subscribe({
       next: () => {
-        this.isLoading = false;
-        this.router.navigate(['/shifts']);
+        this.ngZone.run(() => {
+          this.isLoading.set(false);
+          this.router.navigate(['/shifts']);
+        });
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || err.message || 'Failed to save shift.';
+        this.ngZone.run(() => {
+          this.isLoading.set(false);
+          this.errorMessage.set(err.error?.message || err.message || 'Failed to save shift.');
+          this.cdr.detectChanges();
+        });
       }
     });
   }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -16,13 +16,13 @@ import { Shift, User } from '../../../core/models';
 })
 export class WorkerShiftsComponent implements OnInit {
   workerId = '';
-  worker: User | null = null;
-  shifts: Shift[] = [];
+  worker = signal<User | null>(null);
+  shifts = signal<Shift[]>([]);
   filterForm: FormGroup;
-  totalProfit = 0;
-  totalHours = 0;
-  isLoading = true;
-  errorMessage = '';
+  totalProfit = signal<number>(0);
+  totalHours = signal<number>(0);
+  isLoading = signal<boolean>(true);
+  errorMessage = signal<string>('');
 
   constructor(
     private fb: FormBuilder,
@@ -49,8 +49,8 @@ export class WorkerShiftsComponent implements OnInit {
   }
 
   loadWorkerAndShifts(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
     const { place, fromDate, toDate } = this.filterForm.value;
 
@@ -64,23 +64,24 @@ export class WorkerShiftsComponent implements OnInit {
       )
     }).subscribe({
       next: ({ worker, shifts }) => {
-        this.isLoading = false;
-        this.worker = worker;
-        this.shifts = shifts.sort(
+        this.worker.set(worker);
+        const sorted = (shifts || []).sort(
           (a, b) => new Date(`${b.date}T${b.startTime}`).getTime() - new Date(`${a.date}T${a.startTime}`).getTime()
         );
-        this.calculateMetrics(this.shifts);
+        this.shifts.set(sorted);
+        this.calculateMetrics(sorted);
+        this.isLoading.set(false);
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Failed to retrieve worker or shift records.';
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.message || 'Failed to retrieve worker or shift records.');
       }
     });
   }
 
   fetchShiftsOnly(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
     const { place, fromDate, toDate } = this.filterForm.value;
 
@@ -91,28 +92,32 @@ export class WorkerShiftsComponent implements OnInit {
       toDate || undefined
     ).subscribe({
       next: (data) => {
-        this.isLoading = false;
-        this.shifts = data.sort(
+        const sorted = (data || []).sort(
           (a, b) => new Date(`${b.date}T${b.startTime}`).getTime() - new Date(`${a.date}T${a.startTime}`).getTime()
         );
-        this.calculateMetrics(this.shifts);
+        this.shifts.set(sorted);
+        this.calculateMetrics(sorted);
+        this.isLoading.set(false);
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Failed to filter shifts.';
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.message || 'Failed to filter shifts.');
       }
     });
   }
 
   private calculateMetrics(list: Shift[]): void {
-    this.totalProfit = Number(list.reduce((acc, s) => acc + (s.totalProfit || 0), 0).toFixed(2));
-    this.totalHours = Number(list.reduce((acc, s) => {
+    const profit = list.reduce((acc, s) => acc + (s.totalProfit || 0), 0);
+    this.totalProfit.set(Number(profit.toFixed(2)));
+
+    const hours = list.reduce((acc, s) => {
       const [sh, sm] = s.startTime.split(':').map(Number);
       const [eh, em] = s.endTime.split(':').map(Number);
       let diff = (eh * 60 + em) - (sh * 60 + sm);
       if (diff < 0) diff += 24 * 60;
       return acc + (diff / 60);
-    }, 0).toFixed(1));
+    }, 0);
+    this.totalHours.set(Number(hours.toFixed(1)));
   }
 
   onFilter(): void {

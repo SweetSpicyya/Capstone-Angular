@@ -137,7 +137,7 @@
 
 .shift-table th {
   background: #f8fafc;
-  padding: 12px 16px;
+  padding: 12px 14px;
   text-align: left;
   color: #718096;
   font-weight: 600;
@@ -145,7 +145,7 @@
 }
 
 .shift-table td {
-  padding: 14px 16px;
+  padding: 14px;
   border-bottom: 1px solid #edf2f7;
   color: #2d3748;
 }
@@ -162,7 +162,7 @@
 
 .cell-notes {
   color: #718096;
-  max-width: 200px;
+  max-width: 240px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -183,16 +183,22 @@
 
 .empty-state {
   text-align: center;
-  padding: 48px 16px;
+  padding: 48px;
   color: #a0aec0;
 }
 
 .btn-link {
-  display: inline-block;
-  margin-top: 8px;
   color: #3182ce;
   text-decoration: underline;
+  display: inline-block;
+  margin-top: 8px;
   font-weight: 500;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 48px;
+  color: #718096;
 }
 
 .error-banner {
@@ -202,12 +208,6 @@
   padding: 12px;
   border-radius: 6px;
   margin-bottom: 20px;
-}
-
-.loading-state {
-  text-align: center;
-  padding: 48px;
-  color: #718096;
 }
 
 @media (max-width: 768px) {

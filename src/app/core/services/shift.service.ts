@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Shift } from '../models';
+import { Shift, User } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -12,12 +12,16 @@ export class ShiftService {
   constructor(private http: HttpClient) {}
 
   getMyShifts(place?: string, fromDate?: string, toDate?: string): Observable<Shift[]> {
+    const rawUser = localStorage.getItem('currentUser');
+    const currentUser: User | null = rawUser ? JSON.parse(rawUser) : null;
+    const workerId = currentUser?.id || '';
+
     let params = new HttpParams();
     if (place) params = params.set('place', place);
     if (fromDate) params = params.set('fromDate', fromDate);
     if (toDate) params = params.set('toDate', toDate);
 
-    return this.http.get<Shift[]>(`${this.apiUrl}/my`, { params });
+    return this.http.get<Shift[]>(`${this.apiUrl}/worker/${workerId}`, { params });
   }
 
   getAllShifts(workerName?: string, place?: string, fromDate?: string, toDate?: string): Observable<Shift[]> {

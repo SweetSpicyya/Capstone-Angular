@@ -1,57 +1,87 @@
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 28px;
+.navbar-wrapper {
   background-color: #ffffff;
   border-bottom: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.nav-brand {
+.navbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  height: 64px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 24px;
 }
 
-.logo {
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-link {
+  font-size: 1.25rem;
   font-weight: 700;
-  font-size: 1.15rem;
-  color: #2b6cb0;
+  color: #1a365d;
+  text-decoration: none;
+  letter-spacing: -0.5px;
 }
 
 .role-badge {
-  font-size: 0.72rem;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  background: #edf2f7;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.role-badge.admin {
+  background-color: #edf2f7;
   color: #4a5568;
-  text-transform: uppercase;
-  font-weight: 600;
+  border: 1px solid #cbd5e0;
 }
 
-.nav-links {
-  display: flex;
-  gap: 20px;
-}
-
-.nav-links a {
-  text-decoration: none;
-  color: #4a5568;
-  font-weight: 500;
-  font-size: 0.95rem;
-  padding: 6px 0;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s ease;
-}
-
-.nav-links a:hover,
-.nav-links a.active {
+.role-badge.worker {
+  background-color: #ebf8ff;
   color: #2b6cb0;
-  border-bottom-color: #2b6cb0;
+  border: 1px solid #bee3f8;
 }
 
-.nav-user {
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  margin-left: 20px;
+}
+
+.nav-link {
+  color: #4a5568;
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 6px;
+  transition: all 0.15s ease-in-out;
+}
+
+.nav-link:hover {
+  color: #2b6cb0;
+  background-color: #f7fafc;
+}
+
+.nav-link.active {
+  color: #2b6cb0;
+  font-weight: 600;
+  background-color: #ebf8ff;
+}
+
+.navbar-user {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -59,20 +89,40 @@
 
 .greeting {
   font-size: 0.9rem;
-  color: #2d3748;
+  color: #4a5568;
+  font-weight: 500;
 }
 
 .btn-logout {
-  padding: 6px 14px;
-  background: #edf2f7;
+  background-color: #edf2f7;
+  color: #4a5568;
   border: 1px solid #cbd5e0;
   border-radius: 6px;
+  padding: 6px 14px;
   font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
-  color: #4a5568;
-  transition: background 0.2s;
+  transition: all 0.15s ease-in-out;
 }
 
 .btn-logout:hover {
-  background: #e2e8f0;
+  background-color: #e2e8f0;
+  color: #1a202c;
+}
+
+@media (max-width: 640px) {
+  .navbar-inner {
+    padding: 0 12px;
+    height: auto;
+    flex-wrap: wrap;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .navbar-nav {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    margin-top: 8px;
+  }
 }

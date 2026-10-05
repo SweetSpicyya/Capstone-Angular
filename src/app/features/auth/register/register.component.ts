@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, NgZone, ChangeDetectorRef, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -12,21 +12,24 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class RegisterComponent {
   registerForm: FormGroup;
-  isLoading = false;
-  errorMessage = '';
+  isLoading = signal<boolean>(false);
+  errorMessage = signal<string>('');
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     this.registerForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      username: ['', [Validators.required, Validators.minLength(3)]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
-      username: ['', [Validators.required, Validators.minLength(6), this.specialCharValidator]],
-      password: ['', [Validators.required, Validators.minLength(8), this.specialCharValidator]],
-      birthDate: ['', [Validators.required, this.ageValidator]]
+      birthDate: ['', [Validators.required, this.ageValidator]],
+      role: ['worker', Validators.required]
     });
   }
 
@@ -38,12 +41,6 @@ export class RegisterComponent {
   hasError(fieldName: string, errorType: string): boolean {
     const control = this.registerForm.get(fieldName);
     return !!(control && control.touched && control.hasError(errorType));
-  }
-
-  private specialCharValidator(control: AbstractControl): ValidationErrors | null {
-    if (!control.value) return null;
-    const hasSpecial = /[^a-zA-Z0-9]/.test(control.value);
-    return hasSpecial ? null : { specialCharRequired: true };
   }
 
   private ageValidator(control: AbstractControl): ValidationErrors | null {
@@ -62,27 +59,27 @@ export class RegisterComponent {
   }
 
   onSubmit(): void {
-    if (this.registerForm.invalid || this.isLoading) {
+    if (this.registerForm.invalid || this.isLoading()) {
       this.registerForm.markAllAsTouched();
       return;
     }
 
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
 
-    const payload = {
-      ...this.registerForm.value,
-      role: 'worker' as const
-    };
-
-    this.authService.register(payload).subscribe({
+    this.authService.register(this.registerForm.value).subscribe({
       next: () => {
-        this.isLoading = false;
-        this.router.navigate(['/login']);
+        this.ngZone.run(() => {
+          this.isLoading.set(false);
+          this.router.navigate(['/login']);
+        });
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Registration failed. Please try again.';
+        this.ngZone.run(() => {
+          this.isLoading.set(false);
+          this.errorMessage.set(err.error?.message || 'Registration failed.');
+          this.cdr.detectChanges();
+        });
       }
     });
   }

@@ -1,39 +1,29 @@
 <main class="auth-container">
   <div class="auth-card register-card">
     <div class="auth-header">
-      <h1>Create Worker Account</h1>
-      <p class="subtitle">Join Shift Manager to track your hours and earnings</p>
+      <h1>Create Account</h1>
+      <p class="auth-subtitle">Register to begin logging and managing shifts</p>
     </div>
 
-    @if (errorMessage) {
+    @if (errorMessage()) {
       <div class="error-banner">
-        {{ errorMessage }}
+        {{ errorMessage() }}
       </div>
     }
 
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
       <div class="form-row">
         <div class="form-group">
-          <label for="firstName">First Name</label>
-          <input
-            id="firstName"
-            type="text"
-            formControlName="firstName"
-            placeholder="First name"
-          />
+          <label>First Name</label>
+          <input type="text" formControlName="firstName" placeholder="First Name" />
           @if (isInvalid('firstName')) {
             <span class="error-message">At least 2 characters required.</span>
           }
         </div>
 
         <div class="form-group">
-          <label for="lastName">Last Name</label>
-          <input
-            id="lastName"
-            type="text"
-            formControlName="lastName"
-            placeholder="Last name"
-          />
+          <label>Last Name</label>
+          <input type="text" formControlName="lastName" placeholder="Last Name" />
           @if (isInvalid('lastName')) {
             <span class="error-message">At least 2 characters required.</span>
           }
@@ -41,68 +31,63 @@
       </div>
 
       <div class="form-group">
-        <label for="email">Email Address</label>
-        <input
-          id="email"
-          type="email"
-          formControlName="email"
-          placeholder="name@example.com"
-        />
-        @if (isInvalid('email')) {
-          <span class="error-message">Please enter a valid email address.</span>
+        <label>Email Address</label>
+        <input type="email" formControlName="email" placeholder="email@example.com" />
+        @if (hasError('email', 'required')) {
+          <span class="error-message">Email is required.</span>
+        }
+        @if (hasError('email', 'email')) {
+          <span class="error-message">Invalid email format.</span>
         }
       </div>
 
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input
-          id="username"
-          type="text"
-          formControlName="username"
-          placeholder="e.g. worker123!"
-        />
-        <span class="field-hint">Must contain at least 6 characters and 1 special symbol.</span>
-        @if (isInvalid('username')) {
-          <span class="error-message">Invalid username format.</span>
-        }
+      <div class="form-row">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" formControlName="username" placeholder="Username" />
+          @if (isInvalid('username')) {
+            <span class="error-message">At least 3 characters required.</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" formControlName="password" placeholder="Password" />
+          @if (isInvalid('password')) {
+            <span class="error-message">At least 6 characters required.</span>
+          }
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          formControlName="password"
-          placeholder="e.g. password123!"
-        />
-        <span class="field-hint">Must contain at least 8 characters and 1 special symbol.</span>
-        @if (isInvalid('password')) {
-          <span class="error-message">Invalid password format.</span>
-        }
+      <div class="form-row">
+        <div class="form-group">
+          <label>Birth Date</label>
+          <input type="date" formControlName="birthDate" />
+          @if (hasError('birthDate', 'required')) {
+            <span class="error-message">Birth date is required.</span>
+          }
+          @if (hasError('birthDate', 'invalidAge')) {
+            <span class="error-message">Age must be between 6 and 130 years old.</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Account Role</label>
+          <select formControlName="role">
+            <option value="worker">Worker</option>
+            <option value="admin">Administrator</option>
+          </select>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="birthDate">Birth Date</label>
-        <input
-          id="birthDate"
-          type="date"
-          formControlName="birthDate"
-        />
-        @if (hasError('birthDate', 'required')) {
-          <span class="error-message">Birth date is required.</span>
-        }
-        @if (hasError('birthDate', 'invalidAge')) {
-          <span class="error-message">Age must be between 6 and 130 years old.</span>
-        }
-      </div>
-
-      <button type="submit" class="btn-primary" [disabled]="isLoading">
-        {{ isLoading ? 'Creating Account...' : 'Register' }}
+      <button type="submit" class="btn-submit" [disabled]="isLoading()">
+        {{ isLoading() ? 'Registering...' : 'Complete Registration' }}
       </button>
     </form>
 
     <div class="auth-footer">
-      <p>Already have an account? <a routerLink="/login">Sign in</a></p>
+      <span>Already have an account?</span>
+      <a routerLink="/login">Sign In</a>
     </div>
   </div>
 </main>
